@@ -1,7 +1,12 @@
+import './App.css';
 import React, { useState, useEffect } from 'react';
 import { Auth, Hub, Logger } from 'aws-amplify';
 import { Authenticator, AmplifyTheme } from 'aws-amplify-react';
-import './App.css';
+import { BrowserRouter as Router, Route } from 'react-router-dom';
+import HomePage from './pages/HomePage';
+import ProfilePage from './pages/ProfilePage';
+import MarketPage from './pages/MarketPage';
+import Navbar from './components/Navbar';
 
 // check withAuthenticator vs Authenticator
 export default function App() {
@@ -32,6 +37,14 @@ export default function App() {
     }
   };
 
+  const handleSignOut = async () => {
+    try {
+      await Auth.signOut();
+    } catch (err) {
+      console.error('Error signing out user', err);
+    }
+  };
+
   useEffect(() => {
     console.dir(AmplifyTheme);
     getUserData();
@@ -42,7 +55,20 @@ export default function App() {
     return <Authenticator theme={theme} />;
   }
 
-  return <div>App</div>;
+  return (
+    <Router>
+      <>
+        {/* Navbar */}
+        <Navbar user={user} handleSignOut={handleSignOut} />
+        {/* Routes */}
+        <div className="app-container">
+          <Route exact path="/" component={HomePage} />
+          <Route exact path="/profile" component={ProfilePage} />
+          <Route path="/markets/:marketId" component={MarketPage} />
+        </div>
+      </>
+    </Router>
+  );
 }
 
 const theme = {

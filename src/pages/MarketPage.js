@@ -1,12 +1,9 @@
-import React from "react";
+import React from 'react';
+import { useParams } from 'react-router-dom';
 // import { Loading, Tabs, Icon } from "element-react";
 
-class MarketPage extends React.Component {
-  state = {};
+export default function MarketPage() {
+  const { marketId } = useParams();
 
-  render() {
-    return <div>MarketPage</div>;
-  }
+  return <div>{marketId}</div>;
 }
-
-export default MarketPage;

@@ -72,7 +72,7 @@ export default function MarketPage() {
               </>
             }
             name="1">
-            <NewProduct />
+            <NewProduct marketId={marketId} />
           </Tabs.Pane>
         )}
 

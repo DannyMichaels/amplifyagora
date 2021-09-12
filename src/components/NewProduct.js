@@ -2,8 +2,12 @@ import React, { useState } from 'react';
 import { PhotoPicker } from 'aws-amplify-react';
 // prettier-ignore
 import { Form, Button, Input, Notification, Radio, Progress } from "element-react";
+import { Auth, Storage, API, graphqlOperation } from 'aws-amplify';
+import aws_exports from '../aws-exports';
+import { createProduct } from '../graphql/mutations';
+import { convertDollarsToCents } from '../utils/';
 
-export default function NewProduct() {
+export default function NewProduct({ marketId }) {
   const initialNewProductState = {
     description: '',
     price: '',
@@ -11,6 +15,8 @@ export default function NewProduct() {
     image: null,
   };
 
+  const [isUploading, setIsUploading] = useState(false);
+  const [percentUploaded, setPercentUploaded] = useState(0);
   const [newProductData, setNewProductData] = useState({
     ...initialNewProductState,
   });
@@ -24,10 +30,60 @@ export default function NewProduct() {
     }));
   };
 
-  const handleAddProduct = () => {
-    console.log('product added!', newProductData);
+  const handleAddProduct = async () => {
+    try {
+      setIsUploading(true);
 
-    setNewProductData({ ...initialNewProductState });
+      const visibility = 'public';
+      const { image } = newProductData;
+      const { identityId } = await Auth.currentCredentials();
+
+      const filename = `/${visibility}/${identityId}/${Date.now()}-${
+        image.name
+      }`;
+
+      const uploadedFile = await Storage.put(filename, image.file, {
+        contentType: image.type,
+        progressCallback: (progress) => {
+          console.log(`Uploaded: ${progress.loaded}/${progress.total}`);
+          const percentUploaded = Math.round(
+            (progress.loaded / progress.total) * 100
+          ); // when it's multiplied by 100 it's going to give us a result as a decimal so to convert to a whole number  we use Math.round
+          setPercentUploaded(percentUploaded);
+        },
+      });
+
+      const file = {
+        key: uploadedFile.key,
+        bucket: aws_exports.aws_user_files_s3_bucket,
+        region: aws_exports.aws_project_region,
+      };
+
+      const input = {
+        productMarketId: marketId,
+        description: newProductData.description,
+        shipped: newProductData.shipped,
+        price: convertDollarsToCents(newProductData.price),
+        file,
+      };
+
+      const result = await API.graphql(
+        graphqlOperation(createProduct, { input })
+      );
+      console.log('Created product', result);
+
+      Notification({
+        title: 'Success',
+        message: 'Product Successfully created',
+        type: 'success',
+      });
+      setNewProductData({ ...initialNewProductState });
+      setImagePreview('');
+      setPercentUploaded(0);
+      setIsUploading(false);
+    } catch (err) {
+      console.error('error creating product', err);
+    }
   };
 
   const { shipped, description, price, image } = newProductData;
@@ -73,13 +129,22 @@ export default function NewProduct() {
               </Radio>
             </div>
           </Form.Item>
-          {/* {imagePreview && (
+          {imagePreview && (
             <img
               src={imagePreview}
               alt="Product Preview"
               className="image-preview"
             />
-          )} */}
+          )}
+
+          {percentUploaded > 0 && (
+            <Progress
+              type="circle"
+              className="progress"
+              percentage={percentUploaded}
+            />
+          )}
+
           <PhotoPicker
             title="Product Image"
             onLoad={(url) => {
@@ -119,10 +184,11 @@ export default function NewProduct() {
           />
           <Form.Item>
             <Button
-              disabled={!image || !description || !price}
+              disabled={!image || !description || !price || isUploading}
               type="primary"
-              onClick={handleAddProduct}>
-              Add Product
+              onClick={handleAddProduct}
+              loading={isUploading}>
+              {isUploading ? 'Uploading...' : 'Add Product'}
             </Button>
           </Form.Item>
         </Form>

@@ -1,22 +1,27 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { API, graphqlOperation } from 'aws-amplify';
 import { createMarket } from '../graphql/mutations';
 import { useStateValue } from '../context/currentUser';
 // prettier-ignore
 import { Form, Button, Dialog, Input, Select, Notification } from 'element-react'
 
-export default function NewMarket() {
+export default function NewMarket({
+  handleSearch,
+  searchTerm,
+  handleSearchChange,
+  handleClearSearch,
+  isSearching,
+}) {
   const [isAddMarketDialogShowing, setIsAddMarketDialogShowing] = useState(
     false
   );
   const [marketName, setMarketName] = useState('');
-  const [tags, setTags] = useState([
-    'Arts',
-    'Web Dev',
-    'Technology',
-    'Crafts',
-    'Entertainment',
-  ]);
+
+  const tags = useMemo(
+    () => ['Arts', 'Web Dev', 'Technology', 'Crafts', 'Entertainment'],
+    []
+  );
+
   const [selectedTags, setSelectedTags] = useState([]);
   const [options, setOptions] = useState([]);
 
@@ -71,6 +76,26 @@ export default function NewMarket() {
             onClick={openAddMarketDialog}
           />
         </h1>
+        <Form inline={true} onSubmit={handleSearch}>
+          <Form.Item>
+            <Input
+              placeholder="Search Markets..."
+              value={searchTerm}
+              onChange={handleSearchChange}
+              icon="circle-cross"
+              onIconClick={handleClearSearch}
+            />
+          </Form.Item>
+          <Form.Item>
+            <Button
+              onClick={handleSearch}
+              type="info"
+              loading={isSearching}
+              icon="search">
+              Search
+            </Button>
+          </Form.Item>
+        </Form>
       </div>
 
       <Dialog

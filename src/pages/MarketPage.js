@@ -16,11 +16,8 @@ export default function MarketPage() {
   const { marketId } = useParams();
 
   const checkMarketOwner = async (market) => {
-    console.log('checking product owner');
     if (currentUser) {
-      setIsMarketOwner(currentUser.username === market?.owner, () =>
-        checkMarketOwner()
-      ); // immediately after set state, execute checkMarketOwner
+      setIsMarketOwner(currentUser.username === market?.owner);
     }
   };
 

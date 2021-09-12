@@ -4,22 +4,33 @@ import { PhotoPicker } from 'aws-amplify-react';
 import { Form, Button, Input, Notification, Radio, Progress } from "element-react";
 
 export default function NewProduct() {
-  const [formData, setFormData] = useState({
+  const initialNewProductState = {
     description: '',
     price: '',
     shipped: false,
+    image: null,
+  };
+
+  const [newProductData, setNewProductData] = useState({
+    ...initialNewProductState,
   });
 
+  const [imagePreview, setImagePreview] = useState('');
+
   const handleChange = (name, value) => {
-    setFormData((prevState) => ({
+    setNewProductData((prevState) => ({
       ...prevState,
       [name]: value,
     }));
   };
 
   const handleAddProduct = () => {
-    console.log('product added!');
+    console.log('product added!', newProductData);
+
+    setNewProductData({ ...initialNewProductState });
   };
+
+  const { shipped, description, price, image } = newProductData;
 
   return (
     <div className="flex-center">
@@ -28,6 +39,7 @@ export default function NewProduct() {
         <Form className="market-header">
           <Form.Item label="Add Product Description">
             <Input
+              value={description}
               type="text"
               icon="information"
               placeholder="description"
@@ -37,6 +49,7 @@ export default function NewProduct() {
 
           <Form.Item label="Set Product Price">
             <Input
+              value={price}
               type="number"
               icon="plus"
               placeholder="price ($USD)"
@@ -48,22 +61,67 @@ export default function NewProduct() {
             <div className="text-center">
               <Radio
                 value="true"
-                checked={formData.shipped}
+                checked={shipped}
                 onChange={() => handleChange('shipped', true)}>
                 Shipped
               </Radio>
               <Radio
                 value="false"
-                checked={!formData.shipped}
+                checked={!shipped}
                 onChange={() => handleChange('shipped', false)}>
                 Emailed
               </Radio>
             </div>
           </Form.Item>
-          <PhotoPicker />
+          {/* {imagePreview && (
+            <img
+              src={imagePreview}
+              alt="Product Preview"
+              className="image-preview"
+            />
+          )} */}
+          <PhotoPicker
+            title="Product Image"
+            onLoad={(url) => {
+              setImagePreview(url);
+            }}
+            onPick={(file) => handleChange('image', file)}
+            preview={true}
+            // preview="hidden"
+            theme={{
+              formContainer: {
+                margin: 0,
+                padding: '0.8em',
+              },
+              sectionHeader: {
+                padding: '0.2em',
+                color: '#000',
+                fontWeight: 700,
+              },
+              formSection: {
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+              },
+              sectionBody: {
+                margin: 0,
+                width: '250px',
+                display: 'flex',
+                justifyContent: 'center',
+                border: '1px solid #000',
+              },
+
+              photoPickerButton: {
+                backgroundColor: '#f90',
+              },
+            }}
+          />
           <Form.Item>
-            <Button type="primary" onClick={handleAddProduct}>
-              {' '}
+            <Button
+              disabled={!image || !description || !price}
+              type="primary"
+              onClick={handleAddProduct}>
               Add Product
             </Button>
           </Form.Item>

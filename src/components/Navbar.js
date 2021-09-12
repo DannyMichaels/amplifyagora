@@ -20,22 +20,24 @@ const Navbar = ({ user, handleSignOut }) => (
       </Nav.Item>
 
       {/* Navbar items */}
-      <Nav.Item index="2">
-        <span className="app-user">Hello, {user.username}</span>
-      </Nav.Item>
+      <div>
+        <Nav.Item index="2">
+          <span className="app-user">Hello, {user.username}</span>
+        </Nav.Item>
 
-      <Nav.Item index="3">
         <NavLink to="/profile" className="nav-link">
-          <Icon name="setting" />
-          Profile
+          <Nav.Item index="3">
+            <Icon name="setting" />
+            Profile
+          </Nav.Item>
         </NavLink>
-      </Nav.Item>
 
-      <Nav.Item index="4">
-        <Button type="warning" onClick={handleSignOut}>
-          Sign Out
-        </Button>
-      </Nav.Item>
+        <Nav.Item index="4">
+          <Button type="warning" onClick={handleSignOut}>
+            Sign Out
+          </Button>
+        </Nav.Item>
+      </div>
     </div>
   </Nav>
 );

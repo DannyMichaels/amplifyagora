@@ -20,6 +20,7 @@ export default function HomePage() {
 
   const handleSearch = async (e) => {
     try {
+      e.preventDefault();
       setIsSearching(true);
       const result = await API.graphql(
         graphqlOperation(searchMarkets, {
@@ -36,7 +37,6 @@ export default function HomePage() {
           },
         })
       );
-      console.log({ result });
       setSearchResults(result.data.searchMarkets.items);
       setIsSearching(false);
     } catch (err) {
@@ -53,7 +53,7 @@ export default function HomePage() {
         handleSearchChange={handleSearchChange}
         handleClearSearch={handleClearSearch}
       />
-      <MarketList />
+      <MarketList searchResults={searchResults} />
     </>
   );
 }

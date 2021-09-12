@@ -1,13 +1,13 @@
 import React from 'react';
 import { graphqlOperation } from 'aws-amplify';
 import { Connect } from 'aws-amplify-react';
-import { Loading, Card, Tag } from 'element-react';
+import { Loading, Card, Tag, Icon } from 'element-react';
 import { listMarkets } from '../graphql/queries';
 import Error from './Error';
 import { Link } from 'react-router-dom';
 import { onCreateMarket } from './../graphql/subscriptions';
 
-export default function MarketList() {
+export default function MarketList({ searchResults }) {
   const onNewMarket = (prevQuery, newData) => {
     // make shallow copy of data
     let updatedQuery = { ...prevQuery };
@@ -33,17 +33,29 @@ export default function MarketList() {
         if (errors.length > 0) return <Error errors={errors} />;
         if (loading || !data.listMarkets) return <Loading fullscreen={true} />;
 
+        // if search results, set markets to searchresults, else just set it to all markets from query.
+        const markets =
+          searchResults.length > 0 ? searchResults : data.listMarkets.items;
+
         return (
           <>
-            <h2 className="header">
-              <img
-                className="large-icon"
-                src="https://icon.now.sh/store_mall_directory/527FFF"
-                alt="Store Icon"
-              />
-              Markets
-            </h2>
-            {data.listMarkets.items.map((market) => (
+            {searchResults.length > 0 ? (
+              <h2 className="text-green">
+                <Icon type="success" name="check" className="icon" />
+                {searchResults.length} Results
+              </h2>
+            ) : (
+              <h2 className="header">
+                <img
+                  className="large-icon"
+                  src="https://icon.now.sh/store_mall_directory/527FFF"
+                  alt="Store Icon"
+                />
+                Markets
+              </h2>
+            )}
+
+            {markets.map((market) => (
               <div key={market.id} className="my-2">
                 <Card
                   bodyStyle={{

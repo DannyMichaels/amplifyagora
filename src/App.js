@@ -7,16 +7,17 @@ import HomePage from './pages/HomePage';
 import ProfilePage from './pages/ProfilePage';
 import MarketPage from './pages/MarketPage';
 import Navbar from './components/Navbar';
+import { useStateValue } from './context/currentUser';
 
 // check withAuthenticator vs Authenticator
 export default function App() {
-  const [user, setUser] = useState(null);
+  const { currentUser, setCurrentUser } = useStateValue();
 
   const alex = new Logger('Alexander_the_auth_watcher');
 
   const getUserData = async () => {
     const userData = await Auth.currentAuthenticatedUser();
-    userData ? setUser(userData) : setUser(null);
+    userData ? setCurrentUser(userData) : setCurrentUser(null);
   };
 
   alex.onHubCapsule = (capsule) => {
@@ -30,7 +31,7 @@ export default function App() {
         break;
       case 'signOut':
         console.log('signed out');
-        setUser(null);
+        setCurrentUser(null);
         break;
       default:
         return;
@@ -51,7 +52,7 @@ export default function App() {
     Hub.listen('auth', alex);
   }, []);
 
-  if (!user) {
+  if (!currentUser) {
     return <Authenticator theme={theme} />;
   }
 
@@ -59,7 +60,7 @@ export default function App() {
     <Router>
       <>
         {/* Navbar */}
-        <Navbar user={user} handleSignOut={handleSignOut} />
+        <Navbar handleSignOut={handleSignOut} />
         {/* Routes */}
         <div className="app-container">
           <Route exact path="/" component={HomePage} />

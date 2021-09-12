@@ -7,10 +7,16 @@ import aws_exports from './aws-exports';
 
 // Bring in default Element React theme
 import 'element-theme-default';
+import { CurrentUserProvider } from './context/currentUser';
 
 Amplify.configure(aws_exports);
 
-ReactDOM.render(<App />, document.getElementById('root'));
+ReactDOM.render(
+  <CurrentUserProvider>
+    <App />
+  </CurrentUserProvider>,
+  document.getElementById('root')
+);
 
 // If you want your app to work offline and load faster, you can change
 // unregister() to register() below. Note this comes with some pitfalls.

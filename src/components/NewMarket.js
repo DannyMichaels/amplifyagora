@@ -10,10 +10,27 @@ export default function NewMarket() {
     false
   );
   const [marketName, setMarketName] = useState('');
+  const [tags, setTags] = useState([
+    'Arts',
+    'Web Dev',
+    'Technology',
+    'Crafts',
+    'Entertainment',
+  ]);
+  const [selectedTags, setSelectedTags] = useState([]);
+  const [options, setOptions] = useState([]);
+
   const { currentUser } = useStateValue();
 
   const openAddMarketDialog = () => setIsAddMarketDialogShowing(true);
   const closeAddMarketDialog = () => setIsAddMarketDialogShowing(false);
+
+  const handleFilterTags = (query) => {
+    const opts = tags
+      .map((tag) => ({ value: tag, label: tag }))
+      .filter((tag) => tag.label.toLowerCase().includes(query.toLowerCase()));
+    setOptions(opts);
+  };
 
   const handleAddMarket = async (user) => {
     try {
@@ -21,12 +38,14 @@ export default function NewMarket() {
 
       const input = {
         name: marketName,
+        tags: selectedTags,
         owner: user.username,
       };
 
       const result = await API.graphql(
         graphqlOperation(createMarket, { input })
       );
+      console.log({ result });
       const createdMarket = result.data.createMarket;
       console.log(`created market: id ${createdMarket.id}`);
       setMarketName('');
@@ -69,8 +88,26 @@ export default function NewMarket() {
                 onChange={(value) => setMarketName(value)}
               />
             </Form.Item>
+            <Form.Item label="Add Tags">
+              <Select
+                multiple={true}
+                filterable={true}
+                placeholder="Market Tags"
+                onChange={(selected) => setSelectedTags(selected)}
+                remoteMethod={handleFilterTags}
+                remote={true}>
+                {options.map((option) => (
+                  <Select.Option
+                    key={option.value}
+                    label={option.label}
+                    value={option.value}
+                  />
+                ))}
+              </Select>
+            </Form.Item>
           </Form>
         </Dialog.Body>
+
         <Dialog.Footer>
           <Button onClick={closeAddMarketDialog}>Cancel</Button>
           <Button

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { API, graphqlOperation } from 'aws-amplify';
 import { createMarket } from '../graphql/mutations';
-
+import { useStateValue } from '../context/currentUser';
 // prettier-ignore
 import { Form, Button, Dialog, Input, Select, Notification } from 'element-react'
 
@@ -10,16 +10,18 @@ export default function NewMarket() {
     false
   );
   const [marketName, setMarketName] = useState('');
+  const { currentUser } = useStateValue();
 
   const openAddMarketDialog = () => setIsAddMarketDialogShowing(true);
   const closeAddMarketDialog = () => setIsAddMarketDialogShowing(false);
 
-  const handleAddMarket = async () => {
+  const handleAddMarket = async (user) => {
     try {
       closeAddMarketDialog();
 
       const input = {
         name: marketName,
+        owner: user.username,
       };
 
       const result = await API.graphql(
@@ -29,6 +31,7 @@ export default function NewMarket() {
       console.log(`created market: id ${createdMarket.id}`);
       setMarketName('');
     } catch (err) {
+      console.error('Error adding new market', err);
       Notification.error({
         title: 'Error',
         message: `${err.message || 'Error adding market'}`,
@@ -73,7 +76,7 @@ export default function NewMarket() {
           <Button
             type="primary"
             disabled={!marketName}
-            onClick={handleAddMarket}>
+            onClick={() => handleAddMarket(currentUser)}>
             Add
           </Button>
         </Dialog.Footer>

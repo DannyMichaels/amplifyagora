@@ -49,6 +49,7 @@ export default function NewMarket() {
       const createdMarket = result.data.createMarket;
       console.log(`created market: id ${createdMarket.id}`);
       setMarketName('');
+      setSelectedTags([]);
     } catch (err) {
       console.error('Error adding new market', err);
       Notification.error({

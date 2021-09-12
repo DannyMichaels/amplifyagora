@@ -5,12 +5,31 @@ import { Loading, Card, Icon, Tag } from 'element-react';
 import { listMarkets } from '../graphql/queries';
 import Error from './Error';
 import { Link } from 'react-router-dom';
+import { onCreateMarket } from './../graphql/subscriptions';
 
-const MarketList = () => {
+export default function MarketList() {
+  const onNewMarket = (prevQuery, newData) => {
+    // make shallow copy of data
+    let updatedQuery = { ...prevQuery };
+
+    // make new array
+    const updatedMarketList = [
+      newData.onCreateMarket,
+      ...prevQuery.listMarkets.items,
+    ];
+
+    updatedQuery.listMarkets.item = updatedMarketList;
+
+    return updatedQuery;
+  };
+
   return (
-    <Connect query={graphqlOperation(listMarkets)}>
+    // similiar to react-apollo
+    <Connect
+      query={graphqlOperation(listMarkets)}
+      subscription={graphqlOperation(onCreateMarket)}
+      onSubscriptionMsg={onNewMarket}>
       {({ data, loading, errors }) => {
-        console.log({ data });
         if (errors.length > 0) return <Error errors={errors} />;
         if (loading || !data.listMarkets) return <Loading fullscreen={true} />;
         return (
@@ -65,6 +84,4 @@ const MarketList = () => {
       }}
     </Connect>
   );
-};
-
-export default MarketList;
+}

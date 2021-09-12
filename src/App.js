@@ -1,5 +1,5 @@
 import './App.css';
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { Auth, Hub, Logger } from 'aws-amplify';
 import { Authenticator, AmplifyTheme } from 'aws-amplify-react';
 import { BrowserRouter as Router, Route } from 'react-router-dom';
@@ -50,6 +50,7 @@ export default function App() {
     console.dir(AmplifyTheme);
     getUserData();
     Hub.listen('auth', alex);
+    // eslint-disable-next-line
   }, []);
 
   if (!currentUser) {

@@ -18,13 +18,13 @@ export default function MarketList() {
       ...prevQuery.listMarkets.items,
     ];
 
-    updatedQuery.listMarkets.item = updatedMarketList;
+    updatedQuery.listMarkets.items = updatedMarketList;
 
     return updatedQuery;
   };
 
   return (
-    // similiar to react-apollo
+    // Connect similiar to react-apollo
     <Connect
       query={graphqlOperation(listMarkets)}
       subscription={graphqlOperation(onCreateMarket)}
@@ -32,6 +32,7 @@ export default function MarketList() {
       {({ data, loading, errors }) => {
         if (errors.length > 0) return <Error errors={errors} />;
         if (loading || !data.listMarkets) return <Loading fullscreen={true} />;
+
         return (
           <>
             <h2 className="header">

@@ -150,7 +150,8 @@ export default function Product({ product }) {
 
           <div className="text-right">
             <span className="mx-1">{convertCentsToDollars(product.price)}</span>
-            {!isProductOwner && <PayButton />}
+            {/* {!isProductOwner && <PayButton />} */}
+            <PayButton />
           </div>
         </div>
       </Card>

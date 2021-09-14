@@ -3,10 +3,19 @@ import { API, graphqlOperation } from 'aws-amplify';
 import { useParams } from 'react-router-dom';
 import { Loading, Tabs, Icon } from 'element-react';
 // import { getMarket } from './../graphql/queries';
+
 import { Link } from 'react-router-dom';
 import { useStateValue } from '../context/currentUser';
 import NewProduct from './../components/NewProduct';
 import Product from './../components/Product';
+
+// need to add subscriptions so we don't have to refresh to see updated state
+// they will execute after the mutations
+import {
+  onCreateProduct,
+  onUpdateProduct,
+  onDeleteProduct,
+} from './../graphql/subscriptions';
 
 const getMarket = /* GraphQL */ `
   query GetMarket($id: ID!) {
@@ -65,6 +74,75 @@ export default function MarketPage() {
 
     // eslint-disable-next-line
   }, [marketId]);
+
+  useEffect(() => {
+    let createProductListener, deleteProductListener, updateProductListener;
+
+    const activateProductListeners = async () => {
+      createProductListener = API.graphql(
+        graphqlOperation(onCreateProduct)
+      ).subscribe({
+        next: (productData) => {
+          console.log({ productData });
+          const createdProduct = productData.value.data.onCreateProduct;
+
+          setMarket((prevState) => {
+            const prevProducts = prevState.products.items.filter(
+              (item) => item.id !== createdProduct.id
+            );
+            const updatedProducts = [createdProduct, ...prevProducts];
+            let updatedMarket = { ...prevState };
+            updatedMarket.products.items = updatedProducts;
+            return updatedMarket;
+          });
+        },
+      });
+
+      updateProductListener = API.graphql(
+        graphqlOperation(onUpdateProduct)
+      ).subscribe({
+        next: (productData) => {
+          const updatedProduct = productData.value.data.onUpdateProduct;
+
+          let marketCopy = [...market];
+          const updatedProducts = marketCopy.products.items.map((item) =>
+            item.id === updatedProduct.id ? updatedProduct : item
+          );
+
+          marketCopy.products.items = updatedProducts;
+
+          setMarket(marketCopy);
+        },
+      });
+    };
+
+    deleteProductListener = API.graphql(
+      graphqlOperation(onDeleteProduct)
+    ).subscribe({
+      next: (productData) => {
+        const deletedProduct = productData.value.data.onDeleteProduct;
+
+        setMarket((prevState) => {
+          const updatedProducts = prevState.products.items.filter(
+            (item) => item.id !== deletedProduct.id
+          );
+
+          let updatedMarket = { ...prevState };
+          updatedMarket.products.items = updatedProducts;
+          return updatedMarket;
+        });
+      },
+    });
+
+    activateProductListeners();
+    return () => {
+      // remove the listener on unmount
+
+      createProductListener.unsubscribe();
+      updateProductListener.unsubscribe();
+      deleteProductListener.unsubscribe();
+    };
+  }, []);
 
   if (isLoading) {
     return <Loading fullScreen={true} />;

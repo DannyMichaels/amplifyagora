@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { API, graphqlOperation } from 'aws-amplify';
+import { API, graphqlOperation, Auth } from 'aws-amplify';
 import { useParams } from 'react-router-dom';
 import { Loading, Tabs, Icon } from 'element-react';
 // import { getMarket } from './../graphql/queries';
@@ -52,35 +52,36 @@ export default function MarketPage() {
   const { currentUser } = useStateValue();
   const { marketId } = useParams();
 
+  const getUser = async () => {
+    return await Auth.currentUserInfo();
+  };
+
   const checkMarketOwner = async (market) => {
     if (currentUser) {
       setIsMarketOwner(currentUser.username === market?.owner);
     }
   };
 
-  useEffect(() => {
-    const handleGetMarket = async () => {
-      const input = {
-        id: marketId,
-      };
-
-      const result = await API.graphql(graphqlOperation(getMarket, input));
-      let market = result.data.getMarket;
-      setMarket(market);
-      checkMarketOwner(market);
-      setIsLoading(false);
+  const handleGetMarket = async () => {
+    const input = {
+      id: marketId,
     };
+
+    const result = await API.graphql(graphqlOperation(getMarket, input));
+    let market = result.data.getMarket;
+    setMarket(market);
+    checkMarketOwner(market);
+    setIsLoading(false);
+  };
+
+  useEffect(() => {
     handleGetMarket();
 
-    // eslint-disable-next-line
-  }, [marketId]);
-
-  useEffect(() => {
     let createProductListener, deleteProductListener, updateProductListener;
 
     const activateProductListeners = async () => {
       createProductListener = API.graphql(
-        graphqlOperation(onCreateProduct)
+        graphqlOperation(onCreateProduct, { owner: (await getUser()).username })
       ).subscribe({
         next: (productData) => {
           console.log({ productData });
@@ -99,7 +100,9 @@ export default function MarketPage() {
       });
 
       updateProductListener = API.graphql(
-        graphqlOperation(onUpdateProduct)
+        graphqlOperation(onUpdateProduct, {
+          owner: (await getUser()).username,
+        })
       ).subscribe({
         next: (productData) => {
           const updatedProduct = productData.value.data.onUpdateProduct;
@@ -114,34 +117,37 @@ export default function MarketPage() {
           setMarket(marketCopy);
         },
       });
+
+      deleteProductListener = API.graphql(
+        graphqlOperation(onDeleteProduct, { owner: (await getUser()).username })
+      ).subscribe({
+        next: (productData) => {
+          const deletedProduct = productData.value.data.onDeleteProduct;
+
+          setMarket((prevState) => {
+            const updatedProducts = prevState.products.items.filter(
+              (item) => item.id !== deletedProduct.id
+            );
+
+            let updatedMarket = { ...prevState };
+            updatedMarket.products.items = updatedProducts;
+            return updatedMarket;
+          });
+        },
+      });
     };
 
-    deleteProductListener = API.graphql(
-      graphqlOperation(onDeleteProduct)
-    ).subscribe({
-      next: (productData) => {
-        const deletedProduct = productData.value.data.onDeleteProduct;
-
-        setMarket((prevState) => {
-          const updatedProducts = prevState.products.items.filter(
-            (item) => item.id !== deletedProduct.id
-          );
-
-          let updatedMarket = { ...prevState };
-          updatedMarket.products.items = updatedProducts;
-          return updatedMarket;
-        });
-      },
-    });
-
     activateProductListeners();
+
     return () => {
       // remove the listener on unmount
 
-      createProductListener.unsubscribe();
-      updateProductListener.unsubscribe();
-      deleteProductListener.unsubscribe();
+      createProductListener?.unsubscribe();
+      updateProductListener?.unsubscribe();
+      deleteProductListener?.unsubscribe();
     };
+
+    // eslint-disable-next-line
   }, []);
 
   if (isLoading) {

@@ -6,8 +6,11 @@ import { Notification, Popover, Button, Dialog, Card, Form, Input, Radio } from 
 import { convertCentsToDollars, convertDollarsToCents } from './../utils/index';
 import { useStateValue } from '../context/currentUser';
 import PayButton from './PayButton';
-import { updateProduct } from './../graphql/mutations';
+import { updateProduct, deleteProduct } from './../graphql/mutations';
 import { API, graphqlOperation } from 'aws-amplify';
+
+// need to add subscriptions so we don't have to refresh to see updated state
+// they will execute after the mutations
 
 const initialFormState = {
   description: '',
@@ -24,7 +27,7 @@ export const updateProductFormReducer = (state, action) => {
       return {
         ...payload,
       };
-    case 'HANDLE_CHANGE':
+    case 'UPDATE_FORM':
       return {
         ...state,
         [payload.name]: payload.value,
@@ -39,6 +42,7 @@ export default function Product({ product }) {
   const { currentUser } = useStateValue();
   const [isUpdateProductDialogOpen, setIsUpdateProductDialogOpen] =
     useState(false);
+  const [isDeletePopoverOpen, setIsDeletePopoverOpen] = useState(false);
 
   // trying forms with reducer this time
   const [updateProductFormData, dispatchUpdateProductForm] = useReducer(
@@ -69,9 +73,9 @@ export default function Product({ product }) {
     [currentUser.attributes.sub, product.owner]
   );
 
-  const handleChange = (name, value) => {
+  const handleChangeUpdateProductForm = (name, value) => {
     dispatchUpdateProductForm({
-      type: 'HANDLE_CHANGE',
+      type: 'UPDATE_FORM',
       payload: { name, value },
     });
   };
@@ -96,6 +100,24 @@ export default function Product({ product }) {
       });
     } catch (err) {
       console.error(`Failed to update product with id: ${productId}`, err);
+    }
+  };
+
+  const handleDeleteProduct = async (productId) => {
+    try {
+      setIsDeletePopoverOpen(false);
+      const input = {
+        id: productId,
+      };
+      await API.graphql(graphqlOperation(deleteProduct, { input }));
+
+      Notification({
+        title: 'Success',
+        message: 'Product successfully deleted!',
+        type: 'success',
+      });
+    } catch (err) {
+      console.error(`Failed to delete product with id: ${productId}`, err);
     }
   };
 
@@ -143,12 +165,39 @@ export default function Product({ product }) {
               onClick={openProductUpdateDialog}
             />
 
-            <Button
-              type="danger"
-              icon="delete"
-              className="m-1"
-              // onClick={() => {})}
-            />
+            <Popover
+              placement="top"
+              width="160"
+              trigger="click"
+              visible={isDeletePopoverOpen}
+              content={
+                <>
+                  <p>Do you want to delete this?</p>
+                  <div className="text-right">
+                    <Button
+                      size="mini"
+                      type="text"
+                      className="m-1"
+                      onClick={() => setIsDeletePopoverOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button
+                      type="primary"
+                      size="mini"
+                      className="m-1"
+                      onClick={() => handleDeleteProduct(product.id)}>
+                      Confirm
+                    </Button>
+                  </div>
+                </>
+              }>
+              <Button
+                type="danger"
+                icon="delete"
+                className="m-1"
+                onClick={() => setIsDeletePopoverOpen(true)}
+              />
+            </Popover>
           </>
         )}
       </div>
@@ -168,7 +217,9 @@ export default function Product({ product }) {
                 value={description}
                 trim={true}
                 placeholder="description"
-                onChange={(value) => handleChange('description', value)}
+                onChange={(value) =>
+                  handleChangeUpdateProductForm('description', value)
+                }
               />
             </Form.Item>
 
@@ -178,7 +229,9 @@ export default function Product({ product }) {
                 type="number"
                 icon="plus"
                 placeholder="price ($USD)"
-                onChange={(value) => handleChange('price', value)}
+                onChange={(value) =>
+                  handleChangeUpdateProductForm('price', value)
+                }
               />
             </Form.Item>
 
@@ -187,13 +240,17 @@ export default function Product({ product }) {
                 <Radio
                   value="true"
                   checked={shipped}
-                  onChange={() => handleChange('shipped', true)}>
+                  onChange={() =>
+                    handleChangeUpdateProductForm('shipped', true)
+                  }>
                   Shipped
                 </Radio>
                 <Radio
                   value="false"
                   checked={!shipped}
-                  onChange={() => handleChange('shipped', false)}>
+                  onChange={() =>
+                    handleChangeUpdateProductForm('shipped', false)
+                  }>
                   Emailed
                 </Radio>
               </div>

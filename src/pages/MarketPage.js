@@ -8,6 +8,7 @@ import { Link } from 'react-router-dom';
 import { useStateValue } from '../context/currentUser';
 import NewProduct from './../components/NewProduct';
 import Product from './../components/Product';
+import { formatProductDate } from './../utils/index';
 
 // need to add subscriptions so we don't have to refresh to see updated state
 // they will execute after the mutations
@@ -169,7 +170,7 @@ export default function MarketPage() {
       <div className="items-center pt-2">
         <span style={{ color: 'var(--lightSquidInk)', paddingBottom: '1em' }}>
           <Icon name="date" className="icon" />
-          {market.createdAt}
+          {formatProductDate(market.createdAt)}
         </span>
       </div>
 
